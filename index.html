@@ -290,7 +290,7 @@
       <div class="submit-area">
         <button type="submit" class="btn" id="submitBtn">설문 제출하기</button>
         <p class="form-msg" id="formMsg" role="alert" hidden></p>
-        <p class="privacy">입력하신 정보는 세미나 운영과 개별 상담 안내 목적으로만 사용됩니다.</p>
+        <p class="privacy">입력하신 정보와 소개자료 열람 여부는 세미나 운영과 개별 상담 안내 목적으로만 사용됩니다.</p>
       </div>
     </form>
   </main>
@@ -350,7 +350,16 @@
 
   // 서비스 바로가기: 링크가 아직 '#'이면 이동하지 않음
   document.querySelectorAll('.svc').forEach(function(a){
-    a.addEventListener('click', function(ev){ if (a.hasAttribute('data-pending')) ev.preventDefault(); });
+    a.addEventListener('click', function(ev){
+      if (a.hasAttribute('data-pending')) { ev.preventDefault(); return; }
+      // 누가 어떤 소개자료를 눌렀는지 시트의 같은 응답 줄에 기록 (페이지 이동은 막지 않음)
+      if (!responseId) return;
+      var body = JSON.stringify({ action: 'click', responseId: responseId, target: a.getAttribute('data-link') });
+      try {
+        if (!(navigator.sendBeacon && navigator.sendBeacon(ENDPOINT, new Blob([body], { type: 'text/plain;charset=utf-8' }))))
+          fetch(ENDPOINT, { method: 'POST', mode: 'no-cors', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body });
+      } catch (e) {}
+    });
   });
 
   // 돌아가기: 입력한 내용을 그대로 둔 채 설문 화면으로 (다시 제출하면 시트의 같은 줄을 수정)
